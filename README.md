@@ -1,5 +1,8 @@
 # Classificador de peças — ESP32-CAM
 
+**Projeto da ETPC — Escola Técnica** · Matheus Pedrosa, Carlos Eduardo Borges,
+Maria Eduarda Mazza, Milena Maia e Milena Rodrigues · Apoio: Prof. Vinicius (Tecnologia)
+
 Sistema de visão computacional que identifica a **forma geométrica** das peças que
 passam numa esteira (círculo, quadrado, triângulo, estrela) e mostra, em tempo real
 numa página web, **em qual compartimento da caixa cada peça deve cair**.
@@ -30,7 +33,7 @@ nem de nenhum serviço externo.
 ### Passo a passo
 
 1. Baixe o instalador:
-   **[ClassificadorESP32CAM-Setup-1.0.0.exe](https://github.com/valmeidavr/esp32cam/releases/latest/download/ClassificadorESP32CAM-Setup-1.0.0.exe)**
+   **[ClassificadorESP32CAM-Setup-1.0.1.exe](https://github.com/valmeidavr/esp32cam/releases/latest/download/ClassificadorESP32CAM-Setup-1.0.1.exe)**
    (página com todas as versões: [Releases](https://github.com/valmeidavr/esp32cam/releases))
 2. Execute o instalador. O Windows pode mostrar o aviso *"o Windows protegeu o computador"*
    porque o programa não tem assinatura digital paga — clique em **Mais informações → Executar assim mesmo**.
@@ -263,3 +266,19 @@ esp32cam/
 │   └── gerar_icone.py
 └── docs/
 ```
+
+---
+
+## Autores e direitos autorais
+
+Projeto desenvolvido na **ETPC — Escola Técnica** por:
+
+- Matheus Pedrosa
+- Carlos Eduardo Borges
+- Maria Eduarda Mazza
+- Milena Maia
+- Milena Rodrigues
+
+Apoio: **Prof. Vinicius** (Tecnologia).
+
+© 2026 ETPC. Todos os direitos reservados. Ver [COPYRIGHT](COPYRIGHT).

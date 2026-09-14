@@ -6,8 +6,9 @@
 
 #define Nome        "Classificador de Peças ESP32-CAM"
 #define NomeCurto   "ClassificadorESP32CAM"
-#define Versao      "1.0.0"
-#define Autor       "Victor Almeida"
+#define Versao      "1.0.1"
+#define Autor       "ETPC - Escola Técnica"
+#define Copyright   "© 2026 ETPC. Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza, Milena Maia, Milena Rodrigues. Apoio: Prof. Vinicius (Tecnologia). Todos os direitos reservados."
 #define Site        "https://github.com/valmeidavr/esp32cam"
 #define Exe         "ClassificadorESP32CAM.exe"
 #define Origem      "..\dist\ClassificadorESP32CAM"
@@ -19,6 +20,12 @@ AppVersion={#Versao}
 AppPublisher={#Autor}
 AppPublisherURL={#Site}
 AppSupportURL={#Site}
+AppCopyright={#Copyright}
+VersionInfoCompany={#Autor}
+VersionInfoCopyright={#Copyright}
+VersionInfoVersion={#Versao}
+; pagina de creditos exibida no comeco do assistente
+InfoBeforeFile=..\COPYRIGHT
 DefaultDirName={autopf}\{#NomeCurto}
 DefaultGroupName={#Nome}
 UninstallDisplayIcon={app}\{#Exe}

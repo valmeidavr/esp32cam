@@ -235,6 +235,9 @@ def main() -> int:
 
     print("=" * 60)
     print("  ESP32-CAM  -  classificacao de pecas na esteira")
+    print("  ETPC - Escola Tecnica  |  (c) 2026 Todos os direitos reservados")
+    print("  Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza,")
+    print("  Milena Maia, Milena Rodrigues  |  Apoio: Prof. Vinicius")
     print("=" * 60)
 
     if opcoes.demo:

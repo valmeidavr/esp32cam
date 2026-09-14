@@ -186,6 +186,8 @@ PAGINA = r"""<!doctype html>
   button.ligado { background: #c9a227; color: #15171c; border-color: #c9a227; }
   button.perigo { color: #ff8a8a; }
   .rodape { max-width: 1240px; margin: 14px auto 0; color: var(--texto-3); font-size: 12px; }
+  .creditos { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--borda); }
+  .creditos b { color: var(--texto-2); font-weight: 600; }
 </style>
 
 <header>
@@ -275,6 +277,11 @@ PAGINA = r"""<!doctype html>
 
 <p class="rodape">Detecção por contorno (OpenCV) no PC · imagem chegando pela USB ·
 cada peça é rastreada e contada uma única vez ao cruzar a linha de despejo.</p>
+
+<p class="rodape creditos">
+  <b>ETPC — Escola Técnica</b> · Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza,
+  Milena Maia, Milena Rodrigues · Apoio: Prof. Vinicius (Tecnologia) · © 2026 Todos os direitos reservados
+</p>
 
 <script>
   // Icones das formas, em SVG, para nao depender de fonte nem de imagem externa.
