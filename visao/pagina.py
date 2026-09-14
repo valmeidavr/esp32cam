@@ -191,7 +191,7 @@ PAGINA = r"""<!doctype html>
 </style>
 
 <header>
-  <h1>Classificador de peças <small>ESP32-CAM · visão computacional</small></h1>
+  <h1>Classificador de peças <small>ESP32-CAM · visão computacional <span id="versao"></span></small></h1>
   <div class="status">
     <span><i class="led" id="led"></i><span id="porta">conectando…</span></span>
     <span id="fps">— fps</span>
@@ -353,6 +353,7 @@ cada peça é rastreada e contada uma única vez ao cruzar a linha de despejo.</
     $('porta').textContent = d.conectada ? d.porta : 'placa desconectada';
     vigiar(d);
     $('fps').textContent = d.fps.toFixed(1) + ' fps';
+    if (d.versao) $('versao').textContent = '· v' + d.versao;
 
     for (const c in d.contagens) {
       const el = document.querySelector(`.comp[data-c="${c}"] .cont`);

@@ -33,7 +33,11 @@ python -m PyInstaller --noconfirm --clean --distpath dist --workpath build empac
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller falhou" }
 
 Write-Host "`n[3/3] Inno Setup" -ForegroundColor Cyan
-& $iscc /Q empacotar\instalador.iss
+# a versao mora em visao\versao.py; o instalador recebe o mesmo numero
+$versao = (Select-String -Path visao\versao.py -Pattern 'VERSAO\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+if (-not $versao) { throw "nao achei VERSAO em visao\versao.py" }
+Write-Host "  versao $versao"
+& $iscc /Q "/DVersao=$versao" empacotar\instalador.iss
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup falhou" }
 
 $setup = Get-ChildItem dist\ClassificadorESP32CAM-Setup-*.exe | Sort-Object LastWriteTime | Select-Object -Last 1

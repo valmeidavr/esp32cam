@@ -6,7 +6,10 @@
 
 #define Nome        "Classificador de Peças ESP32-CAM"
 #define NomeCurto   "ClassificadorESP32CAM"
-#define Versao      "1.0.1"
+; a versao vem de visao/versao.py, passada pelo construir.ps1 como /DVersao=x.y.z
+#ifndef Versao
+  #define Versao    "0.0.0"
+#endif
 #define Autor       "ETPC - Escola Técnica"
 #define Copyright   "© 2026 ETPC. Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza, Milena Maia, Milena Rodrigues. Apoio: Prof. Vinicius (Tecnologia). Todos os direitos reservados."
 #define Site        "https://github.com/valmeidavr/esp32cam"
@@ -40,6 +43,9 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
+; na atualizacao automatica o programa esta aberto: fechar e trocar os arquivos
+CloseApplications=yes
+RestartApplications=no
 
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -62,7 +68,10 @@ Name: "{autodesktop}\{#Nome}"; Filename: "{app}\{#Exe}"; WorkingDir: "{app}"; Ta
 ; regra de firewall: sem ela o Windows bloqueia o celular da banca
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""{#Nome}"""; Flags: runhidden; Tasks: firewall
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""{#Nome}"" dir=in action=allow protocol=TCP localport=8000 program=""{app}\{#Exe}"" enable=yes profile=any"; Flags: runhidden; Tasks: firewall
-Filename: "{app}\{#Exe}"; Description: "Abrir o {#Nome} agora"; Flags: nowait postinstall skipifsilent
+; sem "skipifsilent": na atualizacao automatica (instalador rodando em modo
+; silencioso) o programa reabre sozinho. "runasoriginaluser" para ele nao
+; herdar os privilegios de administrador do instalador.
+Filename: "{app}\{#Exe}"; Description: "Abrir o {#Nome} agora"; Flags: nowait postinstall runasoriginaluser
 
 [UninstallRun]
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""{#Nome}"""; Flags: runhidden; RunOnceId: "firewall"

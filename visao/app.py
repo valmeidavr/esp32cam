@@ -28,6 +28,7 @@ from detector import detectar
 from pagina import PAGINA
 from ponte import Camera
 from rastreador import Rastreador
+from versao import VERSAO
 
 LIMITE = b"--quadro"
 COMPARTIMENTOS = ("circulo", "quadrado", "triangulo", "estrela", "outros")
@@ -186,6 +187,7 @@ class Servidor(BaseHTTPRequestHandler):
                 "linha": estado.rastreador.linha,
                 "modo": estado.rastreador.modo,
                 "area": estado.area_minima,
+                "versao": VERSAO,
             }
         return json.dumps(dados).encode()
 
@@ -252,16 +254,23 @@ def main() -> int:
     argumentos.add_argument("--sem-navegador", action="store_true")
     argumentos.add_argument("--demo", action="store_true",
                             help="esteira simulada, para testar sem a placa")
+    argumentos.add_argument("--sem-atualizar", action="store_true",
+                            help="nao procurar versao nova no GitHub ao abrir")
     argumentos.add_argument("--gravar", action="store_true",
                             help="regravar o firmware na placa e sair")
     opcoes = argumentos.parse_args()
 
     print("=" * 60)
-    print("  ESP32-CAM  -  classificacao de pecas na esteira")
+    print(f"  ESP32-CAM  -  classificacao de pecas na esteira   v{VERSAO}")
     print("  ETPC - Escola Tecnica  |  (c) 2026 Todos os direitos reservados")
     print("  Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza,")
     print("  Milena Maia, Milena Rodrigues  |  Apoio: Prof. Vinicius")
     print("=" * 60)
+
+    if not opcoes.sem_atualizar and not opcoes.gravar:
+        import atualizador
+        if atualizador.verificar_e_atualizar():
+            return 0        # o instalador assume daqui e reabre o programa
 
     if opcoes.demo:
         from fonte_demo import EsteiraSimulada
