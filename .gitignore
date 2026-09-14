@@ -1,0 +1,16 @@
+# PlatformIO
+.pio/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# empacotamento (gerado pelo empacotar/construir.ps1)
+build/
+dist/
+empacotar/icone.ico
+
+# arquivos de teste locais
+*.jpg
+!docs/*.jpg
