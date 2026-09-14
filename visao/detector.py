@@ -10,7 +10,10 @@ import cv2
 import numpy as np
 
 
-@dataclass
+# eq=False: com o __eq__ que o dataclass gera, comparar duas formas compara os
+# contornos (arrays numpy de tamanhos diferentes) e estoura um ValueError —
+# foi isso que congelava o video. Aqui igualdade e identidade, como deve ser.
+@dataclass(eq=False)
 class Forma:
     nome: str
     contorno: np.ndarray

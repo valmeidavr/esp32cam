@@ -13,6 +13,7 @@ import json
 import sys
 import threading
 import time
+import traceback
 import webbrowser
 from collections import Counter, deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -39,6 +40,7 @@ class Estado:
         self.trava = threading.Lock()
         self.jpeg: bytes | None = None
         self.fps = 0.0
+        self.quadros_processados = 0   # a pagina vigia isto para saber se o video parou
         self.area_minima = 700
         self.mostrar_linha = True
 
@@ -60,10 +62,16 @@ camera: Camera | None = None
 
 
 def laco_de_visao() -> None:
-    """Detecta, rastreia e desenha — uma vez por quadro novo."""
+    """Detecta, rastreia e desenha — uma vez por quadro novo.
+
+    Nada que acontecer com um quadro pode derrubar esta thread: se ela morre,
+    o video congela no ultimo quadro e o programa parece travado. Um erro e
+    registrado no console e o quadro seguinte segue normalmente.
+    """
     ultima_sequencia = -1
     ultimo_instante = time.monotonic()
     media_fps = 0.0
+    erros_seguidos = 0
 
     while True:
         sequencia, quadro = camera.quadro_novo(ultima_sequencia)
@@ -72,27 +80,14 @@ def laco_de_visao() -> None:
             continue
         ultima_sequencia = sequencia
 
-        formas = detectar(quadro, area_minima=estado.area_minima)
-
-        with estado.trava:
-            rastreador = estado.rastreador
-            rastreador.largura = quadro.shape[1]
-            despejos = rastreador.atualizar(formas)
-            for d in despejos:
-                estado.contagens[d.compartimento] += 1
-                estado.serie += 1
-                estado.eventos.appendleft({
-                    "id": d.id, "forma": d.forma,
-                    "compartimento": d.compartimento,
-                    "confianca": d.confianca, "instante": d.instante,
-                })
-            pecas = rastreador.pecas
-            linha = rastreador.linha
-            mostrar_linha = estado.mostrar_linha
-
-        anotado = cena.desenhar(quadro, pecas, linha, mostrar_linha)
-        ok, buffer = cv2.imencode(".jpg", anotado, [cv2.IMWRITE_JPEG_QUALITY, 80])
-        if not ok:
+        try:
+            _processar_quadro(quadro)
+            erros_seguidos = 0
+        except Exception:
+            erros_seguidos += 1
+            if erros_seguidos <= 3:       # nao inundar o console se for todo quadro
+                print("\n[visao] erro ao processar um quadro (o video continua):")
+                traceback.print_exc()
             continue
 
         agora = time.monotonic()
@@ -101,15 +96,42 @@ def laco_de_visao() -> None:
         if intervalo > 0:
             # Media exponencial: o numero na tela para de tremer a cada quadro.
             media_fps = 0.9 * media_fps + 0.1 * (1.0 / intervalo)
-
         with estado.trava:
-            estado.jpeg = buffer.tobytes()
             estado.fps = media_fps
-            estado.pecas_visiveis = [
-                {"id": p.id, "forma": p.nome, "confianca": round(p.confianca, 2),
-                 "contada": p.contada, "centro": p.centro}
-                for p in pecas
-            ]
+
+
+def _processar_quadro(quadro) -> None:
+    formas = detectar(quadro, area_minima=estado.area_minima)
+
+    with estado.trava:
+        rastreador = estado.rastreador
+        rastreador.largura = quadro.shape[1]
+        despejos = rastreador.atualizar(formas)
+        for d in despejos:
+            estado.contagens[d.compartimento] += 1
+            estado.serie += 1
+            estado.eventos.appendleft({
+                "id": d.id, "forma": d.forma,
+                "compartimento": d.compartimento,
+                "confianca": d.confianca, "instante": d.instante,
+            })
+        pecas = rastreador.pecas
+        linha = rastreador.linha
+        mostrar_linha = estado.mostrar_linha
+
+    anotado = cena.desenhar(quadro, pecas, linha, mostrar_linha)
+    ok, buffer = cv2.imencode(".jpg", anotado, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    if not ok:
+        return
+
+    with estado.trava:
+        estado.jpeg = buffer.tobytes()
+        estado.quadros_processados += 1
+        estado.pecas_visiveis = [
+            {"id": p.id, "forma": p.nome, "confianca": round(p.confianca, 2),
+             "contada": p.contada, "centro": p.centro}
+            for p in pecas
+        ]
 
 
 class Servidor(BaseHTTPRequestHandler):
@@ -157,6 +179,7 @@ class Servidor(BaseHTTPRequestHandler):
                 "pecas": estado.pecas_visiveis,
                 "fps": round(estado.fps, 1),
                 "quadros": camera.quadros_lidos,
+                "processados": estado.quadros_processados,
                 "perdidos": camera.quadros_descartados,
                 "conectada": camera.conectada,
                 "porta": camera.porta,

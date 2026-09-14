@@ -28,7 +28,7 @@ COMPARTIMENTOS = {
 COMPARTIMENTO_PADRAO = "outros"
 
 
-@dataclass
+@dataclass(eq=False)     # guarda um contorno numpy: ver o comentario em Forma
 class Peca:
     id: int
     centro: tuple[int, int]
@@ -131,7 +131,8 @@ class Rastreador:
             ) ** 0.5
             if distancia <= self.distancia_maxima:
                 casadas[id_peca] = mais_perto
-                livres.remove(mais_perto)
+                # por identidade, nunca por ==: nao queremos comparar contornos
+                livres = [f for f in livres if f is not mais_perto]
 
         return casadas
 

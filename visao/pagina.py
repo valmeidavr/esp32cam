@@ -351,6 +351,7 @@ cada peça é rastreada e contada uma única vez ao cruzar a linha de despejo.</
 
     $('led').classList.toggle('ok', d.conectada);
     $('porta').textContent = d.conectada ? d.porta : 'placa desconectada';
+    vigiar(d);
     $('fps').textContent = d.fps.toFixed(1) + ' fps';
 
     for (const c in d.contagens) {
@@ -414,8 +415,25 @@ cada peça é rastreada e contada uma única vez ao cruzar a linha de despejo.</
     renderHistorico([]);
   };
 
-  // se o stream cair (placa reiniciou), tenta de novo sozinho
-  $('video').onerror = () => setTimeout(() => { $('video').src = '/stream?t=' + Date.now(); }, 1500);
+  // ------------------------------------------------- vigia do video
+  // O <img> de um stream MJPEG nao avisa quando para de receber quadros: a
+  // imagem simplesmente congela. Entao o vigia compara o contador de quadros
+  // processados a cada consulta; se ele nao anda por alguns segundos, religa
+  // o stream e avisa na legenda.
+  const religar = () => { $('video').src = '/stream?t=' + Date.now(); };
+  $('video').onerror = () => setTimeout(religar, 1500);
+
+  let ultimoProcessado = -1, paradoDesde = 0;
+  function vigiar(d) {
+    const agora = Date.now();
+    if (d.processados !== ultimoProcessado) {
+      ultimoProcessado = d.processados; paradoDesde = agora; return;
+    }
+    if (agora - paradoDesde > 4000) {
+      $('legenda').textContent = d.conectada ? 'sem imagem — religando…' : 'placa desconectada';
+      religar(); paradoDesde = agora;
+    }
+  }
 </script>
 </html>
 """
