@@ -1,5 +1,5 @@
-"""Desenho do que a camera esta vendo: as pecas rastreadas e a linha de
-despejo.
+"""Desenho do que a camera esta vendo: as pecas rastreadas, a linha de
+despejo e a area util da esteira.
 
 Os rotulos saem do rastreador, nao do detector: assim o nome exibido e a
 forma mais votada ao longo de toda a passagem da peca, e para de piscar entre
@@ -12,8 +12,8 @@ import numpy as np
 from detector import CORES
 from rastreador import Peca
 
-BRANCO = (255, 255, 255)
 CINZA = (120, 120, 120)
+AZUL = (230, 160, 60)
 
 
 def _rotulo(img, texto: str, x: int, y: int, cor) -> None:
@@ -25,15 +25,32 @@ def _rotulo(img, texto: str, x: int, y: int, cor) -> None:
 
 
 def desenhar(quadro: np.ndarray, pecas: list[Peca], linha: int,
-             mostrar_linha: bool = True) -> np.ndarray:
-    saida = quadro.copy()
+             mostrar_linha: bool = True, roi=None,
+             mascara: np.ndarray | None = None) -> np.ndarray:
+    # Na visao de calibracao a base e a mascara: branco = o que o detector
+    # considera peca. Ajuda a acertar os limiares na hora, olhando o resultado.
+    if mascara is not None:
+        saida = cv2.cvtColor(mascara, cv2.COLOR_GRAY2BGR)
+        saida = cv2.addWeighted(saida, 0.75, quadro, 0.25, 0)
+    else:
+        saida = quadro.copy()
     altura, largura = saida.shape[:2]
+
+    if roi is not None:
+        x1, y1, x2, y2 = roi
+        # escurece o que esta fora da area util
+        sombra = saida.copy()
+        sombra[:] = (sombra * 0.35).astype(np.uint8)
+        sombra[y1:y2, x1:x2] = saida[y1:y2, x1:x2]
+        saida = sombra
+        cv2.rectangle(saida, (x1, y1), (x2 - 1, y2 - 1), AZUL, 1)
+        _rotulo(saida, "area da esteira", x1 + 4, y1 + 14, AZUL)
 
     if mostrar_linha:
         # Tracejada, para nao se confundir com a borda de alguma peca.
         for y in range(0, altura, 14):
             cv2.line(saida, (linha, y), (linha, min(y + 8, altura)), (90, 90, 90), 1)
-        _rotulo(saida, "despejo", max(2, linha - 58), 14, CINZA)
+        _rotulo(saida, "despejo", max(2, linha - 58), altura - 8, CINZA)
 
     for peca in pecas:
         cor = CORES.get(peca.nome, (200, 200, 200))

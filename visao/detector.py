@@ -1,13 +1,26 @@
-"""Classificacao de formas geometricas por analise de contorno.
+"""Deteccao e classificacao de formas geometricas.
 
-Nao usa rede neural: o formato sai da propria geometria do contorno, o que e
-mais rapido, roda offline e nao erra de um jeito imprevisivel.
+A imagem e separada em "peca" e "fundo" por cor: sobre a esteira clara, uma
+peca ou e colorida (saturacao alta) ou e escura. Isso rende regioes cheias,
+que viram poligonos limpos mesmo com a camera fora de foco — bem melhor do
+que procurar bordas, que saem picadas em imagem borrada e transformam a
+beirada de qualquer objeto em "forma".
+
+A classificacao sai da geometria do contorno (vertices, circularidade,
+solidez); nao ha rede neural, roda offline e nao erra de um jeito
+imprevisivel.
 """
 
 from dataclasses import dataclass
 
 import cv2
 import numpy as np
+
+# Limiares padrao. Podem ser ajustados na pagina, com a visao da mascara.
+SATURACAO_MINIMA = 90     # abaixo disso e "sem cor" (papel, esteira, cinza)
+ESCURO_MAXIMO = 70        # valor (brilho) abaixo disso e "escuro" (peca preta)
+AREA_MAXIMA = 0.70        # fracao da area util; maior que isso e o fundo, nao uma peca
+EXTENSAO_MINIMA = 0.30    # area / caixa envolvente; linhas e riscos ficam abaixo
 
 
 # eq=False: com o __eq__ que o dataclass gera, comparar duas formas compara os
@@ -41,40 +54,75 @@ CORES = {
 }
 
 
-def _classificar(contorno: np.ndarray, area: float) -> tuple[str, int, float, float]:
+# ------------------------------------------------------------- segmentacao ---
+
+def segmentar(quadro: np.ndarray, sat_min: int = SATURACAO_MINIMA,
+              escuro: int = ESCURO_MAXIMO, roi=None) -> np.ndarray:
+    """Mascara 0/255 do que parece peca: colorido OU escuro, dentro da ROI."""
+    hsv = cv2.cvtColor(cv2.GaussianBlur(quadro, (5, 5), 0), cv2.COLOR_BGR2HSV)
+    s, v = hsv[..., 1], hsv[..., 2]
+    mascara = ((s >= sat_min) | (v <= escuro)).astype(np.uint8) * 255
+
+    # fecha buracos pequenos (reflexos, textura) e tira pontinhos isolados
+    nucleo = np.ones((5, 5), np.uint8)
+    mascara = cv2.morphologyEx(mascara, cv2.MORPH_CLOSE, nucleo)
+    mascara = cv2.morphologyEx(mascara, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+
+    if roi is not None:
+        x1, y1, x2, y2 = roi
+        recorte = np.zeros_like(mascara)
+        recorte[y1:y2, x1:x2] = mascara[y1:y2, x1:x2]
+        mascara = recorte
+    return mascara
+
+
+# ----------------------------------------------------------- classificacao ---
+
+def _classificar(contorno: np.ndarray, area: float):
+    """Devolve (nome, vertices, circularidade, solidez), ou None se o contorno
+    nem parece uma peca (linha, risco, mancha sem forma)."""
     perimetro = cv2.arcLength(contorno, closed=True)
     if perimetro == 0:
-        return "poligono", 0, 0.0, 1.0
+        return None
 
-    # 4% do perimetro tolera bem o serrilhado de uma imagem 320x240 sem
-    # arredondar os cantos de um triangulo de verdade.
-    aprox = cv2.approxPolyDP(contorno, 0.04 * perimetro, closed=True)
-    vertices = len(aprox)
+    x, y, w, h = cv2.boundingRect(contorno)
+    extensao = area / float(w * h) if w * h else 0.0
+    if extensao < EXTENSAO_MINIMA:
+        return None            # uma linha ou um risco, nao uma peca
 
+    envoltoria = cv2.convexHull(contorno)
+    area_envoltoria = cv2.contourArea(envoltoria)
+    solidez = area / area_envoltoria if area_envoltoria > 0 else 0.0
     # 1.0 = circulo perfeito. Um quadrado da ~0.785, um triangulo ~0.60.
     circularidade = 4 * np.pi * area / (perimetro * perimetro)
 
-    # Solidez = area / area do menor poligono convexo em volta. Formas cheias
-    # ficam perto de 1.0; uma estrela de cinco pontas fica em torno de 0.5,
-    # porque os vaos entre as pontas nao contam como area.
-    envoltoria = cv2.convexHull(contorno)
-    area_envoltoria = cv2.contourArea(envoltoria)
-    solidez = area / area_envoltoria if area_envoltoria > 0 else 1.0
-
+    # ---- concavas: so a estrela e aceita ---------------------------------
     if solidez < 0.72:
-        # Forma concava. Aqui a aproximacao grossa de 4% comeria as pontas, e
-        # a estrela viraria um pentagono — por isso o epsilon menor.
+        # Estrela de cinco pontas: solidez em torno de 0.5 (os vaos entre as
+        # pontas nao contam), ~10 vertices com aproximacao fina, e a
+        # envoltoria convexa e um pentagono. Os tres juntos separam a estrela
+        # de uma mancha qualquer com reentrancias.
         pontas = len(cv2.approxPolyDP(contorno, 0.02 * perimetro, closed=True))
-        if 8 <= pontas <= 12:
+        lados_envoltoria = len(cv2.approxPolyDP(
+            envoltoria, 0.04 * cv2.arcLength(envoltoria, True), closed=True))
+        if 0.38 <= solidez <= 0.72 and 8 <= pontas <= 12 and 5 <= lados_envoltoria <= 6:
             return "estrela", pontas, circularidade, solidez
         return "poligono", pontas, circularidade, solidez
+
+    # ---- convexas -----------------------------------------------------------
+    if solidez < 0.85:
+        return "poligono", 0, circularidade, solidez   # cheia demais para estrela, furada demais para forma
+
+    # 4% do perimetro tolera bem o serrilhado de uma imagem 320x240 sem
+    # arredondar os cantos de um triangulo de verdade.
+    vertices = len(cv2.approxPolyDP(contorno, 0.04 * perimetro, closed=True))
 
     if vertices == 3:
         return "triangulo", vertices, circularidade, solidez
 
     if vertices == 4:
         # Quadrado ou retangulo: o minAreaRect ignora a rotacao, entao a peca
-        # continua sendo reconhecida se estiver torta na mesa.
+        # continua sendo reconhecida se estiver torta na esteira.
         (_, _), (largura, altura), _ = cv2.minAreaRect(contorno)
         if min(largura, altura) == 0:
             return "retangulo", vertices, circularidade, solidez
@@ -99,29 +147,38 @@ def _classificar(contorno: np.ndarray, area: float) -> tuple[str, int, float, fl
     return "poligono", vertices, circularidade, solidez
 
 
-def detectar(quadro: np.ndarray, area_minima: int = 700) -> list[Forma]:
-    """Devolve as formas encontradas no quadro, da maior para a menor."""
-    cinza = cv2.cvtColor(quadro, cv2.COLOR_BGR2GRAY)
-    cinza = cv2.GaussianBlur(cinza, (5, 5), 0)
+# ---------------------------------------------------------------- deteccao ---
 
-    # Canny se vira melhor que threshold fixo com a iluminacao irregular de
-    # uma webcam caseira; o dilate depois costura as bordas que sairam picadas.
-    bordas = cv2.Canny(cinza, 50, 150)
-    bordas = cv2.dilate(bordas, np.ones((3, 3), np.uint8), iterations=2)
-    bordas = cv2.erode(bordas, np.ones((3, 3), np.uint8), iterations=1)
-
-    contornos, _ = cv2.findContours(bordas, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    formas: list[Forma] = []
+def detectar_com_mascara(quadro: np.ndarray, area_minima: int = 700,
+                         sat_min: int = SATURACAO_MINIMA, escuro: int = ESCURO_MAXIMO,
+                         roi=None) -> tuple[list[Forma], np.ndarray]:
+    """Devolve (formas da maior para a menor, mascara usada)."""
     altura, largura = quadro.shape[:2]
-    area_do_quadro = altura * largura
+    if roi is None:
+        x1, y1, x2, y2 = 0, 0, largura, altura
+    else:
+        x1, y1, x2, y2 = roi
+
+    mascara = segmentar(quadro, sat_min, escuro, roi)
+    contornos, _ = cv2.findContours(mascara, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    area_util = max(1, (x2 - x1) * (y2 - y1))
+    formas: list[Forma] = []
 
     for contorno in contornos:
         area = cv2.contourArea(contorno)
+        if area < area_minima or area > AREA_MAXIMA * area_util:
+            continue
 
-        # Descarta ruido, e tambem a moldura inteira quando o Canny fecha um
-        # contorno em volta da imagem toda.
-        if area < area_minima or area > 0.90 * area_do_quadro:
+        # Encostado na borda da area util: e uma peca entrando/saindo ou um
+        # objeto de fora (mao, bancada). De um jeito ou de outro, nao da para
+        # classificar este quadro; o rastreador vota nos quadros seguintes.
+        bx, by, bw, bh = cv2.boundingRect(contorno)
+        if bx <= x1 or by <= y1 or bx + bw >= x2 or by + bh >= y2:
+            continue
+
+        resultado = _classificar(contorno, area)
+        if resultado is None:
             continue
 
         momentos = cv2.moments(contorno)
@@ -130,13 +187,16 @@ def detectar(quadro: np.ndarray, area_minima: int = 700) -> list[Forma]:
         centro = (int(momentos["m10"] / momentos["m00"]),
                   int(momentos["m01"] / momentos["m00"]))
 
-        nome, vertices, circularidade, solidez = _classificar(contorno, area)
-        formas.append(
-            Forma(nome, contorno, centro, area, vertices, circularidade, solidez)
-        )
+        nome, vertices, circularidade, solidez = resultado
+        formas.append(Forma(nome, contorno, centro, area, vertices, circularidade, solidez))
 
     formas.sort(key=lambda f: f.area, reverse=True)
-    return formas
+    return formas, mascara
+
+
+def detectar(quadro: np.ndarray, area_minima: int = 700, **opcoes) -> list[Forma]:
+    """Devolve as formas encontradas no quadro, da maior para a menor."""
+    return detectar_com_mascara(quadro, area_minima, **opcoes)[0]
 
 
 def desenhar(quadro: np.ndarray, formas: list[Forma]) -> np.ndarray:

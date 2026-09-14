@@ -42,10 +42,10 @@ def test_varias_pecas_reais_em_ordens_diferentes(cena):
     """Com pecas de tamanhos distintos a ordenacao por area muda a ordem da
     lista entre quadros; o rastreador tem de aguentar qualquer ordem."""
     r = Rastreador(largura=320)
-    for x in range(20, 300, 15):
+    for x in range(60, 230, 15):                       # todas dentro da imagem
         img = quadro_vazio()
-        desenhar(img, "circulo", x, 70, tamanho=34)
-        desenhar(img, "estrela", 320 - x, 170, tamanho=22)
+        desenhar(img, "circulo", x, 60, tamanho=30)
+        desenhar(img, "estrela", 300 - x, 180, tamanho=22)
         desenhar(img, "triangulo", x + 40, 120, tamanho=16)
         r.atualizar(detectar(img, area_minima=200))    # nao pode levantar
-    assert len(r.pecas) >= 2
+    assert len(r.pecas) == 3

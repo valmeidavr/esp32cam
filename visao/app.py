@@ -23,8 +23,8 @@ import cv2
 
 import cena
 import deteccao_porta
+import detector
 import rede
-from detector import detectar
 from pagina import PAGINA
 from ponte import Camera
 from rastreador import Rastreador
@@ -44,6 +44,10 @@ class Estado:
         self.quadros_processados = 0   # a pagina vigia isto para saber se o video parou
         self.area_minima = 700
         self.mostrar_linha = True
+        self.sat_min = detector.SATURACAO_MINIMA
+        self.escuro = detector.ESCURO_MAXIMO
+        self.roi = None            # (x1, y1, x2, y2) da area da esteira, ou None = tudo
+        self.ver_mascara = False   # visao de calibracao: o que o detector enxerga
 
         self.rastreador = Rastreador(largura=320)
         self.contagens = Counter({c: 0 for c in COMPARTIMENTOS})
@@ -102,7 +106,11 @@ def laco_de_visao() -> None:
 
 
 def _processar_quadro(quadro) -> None:
-    formas = detectar(quadro, area_minima=estado.area_minima)
+    with estado.trava:
+        roi, sat_min, escuro = estado.roi, estado.sat_min, estado.escuro
+        ver_mascara = estado.ver_mascara
+    formas, mascara = detector.detectar_com_mascara(
+        quadro, area_minima=estado.area_minima, sat_min=sat_min, escuro=escuro, roi=roi)
 
     with estado.trava:
         rastreador = estado.rastreador
@@ -120,7 +128,8 @@ def _processar_quadro(quadro) -> None:
         linha = rastreador.linha
         mostrar_linha = estado.mostrar_linha
 
-    anotado = cena.desenhar(quadro, pecas, linha, mostrar_linha)
+    anotado = cena.desenhar(quadro, pecas, linha, mostrar_linha, roi,
+                            mascara if ver_mascara else None)
     ok, buffer = cv2.imencode(".jpg", anotado, [cv2.IMWRITE_JPEG_QUALITY, 80])
     if not ok:
         return
@@ -187,6 +196,10 @@ class Servidor(BaseHTTPRequestHandler):
                 "linha": estado.rastreador.linha,
                 "modo": estado.rastreador.modo,
                 "area": estado.area_minima,
+                "sat": estado.sat_min,
+                "escuro": estado.escuro,
+                "roi": estado.roi,
+                "mascara": estado.ver_mascara,
                 "versao": VERSAO,
             }
         return json.dumps(dados).encode()
@@ -201,6 +214,14 @@ class Servidor(BaseHTTPRequestHandler):
                 estado.rastreador.definir_modo(consulta["modo"][0])
             if "mostrar_linha" in consulta:
                 estado.mostrar_linha = consulta["mostrar_linha"][0] == "1"
+            if "sat" in consulta:
+                estado.sat_min = max(0, min(255, int(consulta["sat"][0])))
+            if "escuro" in consulta:
+                estado.escuro = max(0, min(255, int(consulta["escuro"][0])))
+            if "mascara" in consulta:
+                estado.ver_mascara = consulta["mascara"][0] == "1"
+            if "roi" in consulta:
+                estado.roi = _ler_roi(consulta["roi"][0])
         if "qualidade" in consulta:
             camera.comando(f"Q{int(consulta['qualidade'][0])}")
         if "flash" in consulta:
@@ -227,8 +248,21 @@ class Servidor(BaseHTTPRequestHandler):
                     + f"Content-Length: {len(jpeg)}\r\n\r\n".encode()
                     + jpeg + b"\r\n"
                 )
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            pass    # aba fechada
+        except OSError:
+            pass    # aba fechada (no Windows chega como varios WinError diferentes)
+
+
+def _ler_roi(texto: str):
+    """'x1,y1,x2,y2' -> tupla normalizada e dentro de 320x240; vazio -> None."""
+    try:
+        x1, y1, x2, y2 = (int(float(v)) for v in texto.split(","))
+    except ValueError:
+        return None
+    x1, x2 = sorted((max(0, min(320, x1)), max(0, min(320, x2))))
+    y1, y2 = sorted((max(0, min(240, y1)), max(0, min(240, y2))))
+    if x2 - x1 < 20 or y2 - y1 < 20:
+        return None                # arrasto minusculo = clique; nao e uma area
+    return (x1, y1, x2, y2)
 
 
 def _pausar_se_clicado() -> None:
@@ -243,6 +277,12 @@ def _pausar_se_clicado() -> None:
 
 def main() -> int:
     global camera
+
+    # Descarregar cada linha na hora: no .exe congelado, com a saida redirecionada
+    # para arquivo ou outro programa, o Python segura tudo ate sair e o log fica vazio.
+    for fluxo in (sys.stdout, sys.stderr):
+        if hasattr(fluxo, "reconfigure"):
+            fluxo.reconfigure(line_buffering=True)
 
     argumentos = argparse.ArgumentParser(description=__doc__)
     argumentos.add_argument("--porta", default=None,

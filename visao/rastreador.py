@@ -27,6 +27,10 @@ COMPARTIMENTOS = {
 }
 COMPARTIMENTO_PADRAO = "outros"
 
+# Abaixo disto os quadros discordaram demais sobre a forma: a peca vai para
+# "outros" em vez de cair num compartimento errado.
+CONFIANCA_MINIMA = 0.60
+
 
 @dataclass(eq=False)     # guarda um contorno numpy: ver o comentario em Forma
 class Peca:
@@ -54,7 +58,15 @@ class Peca:
 
     @property
     def compartimento(self) -> str:
+        if self.confianca < CONFIANCA_MINIMA:
+            return COMPARTIMENTO_PADRAO
         return COMPARTIMENTOS.get(self.nome, COMPARTIMENTO_PADRAO)
+
+    @property
+    def e_peca(self) -> bool:
+        """'poligono' e o que o detector nao conseguiu nomear — uma mancha,
+        uma sombra, um pedaco de outra coisa. Isso nao entra na conta."""
+        return self.nome != "poligono"
 
 
 @dataclass
@@ -113,27 +125,29 @@ class Rastreador:
         return 1 if x >= self.linha else -1
 
     def _casar(self, formas: list[Forma]) -> dict[int, Forma]:
-        """Liga cada peca conhecida a deteccao mais proxima deste quadro."""
-        casadas: dict[int, Forma] = {}
-        livres = list(formas)
+        """Liga cada peca conhecida a deteccao mais proxima deste quadro.
 
+        Todos os pares (peca, deteccao) sao ordenados pela distancia e
+        atribuidos do mais perto para o mais longe. Com duas pecas lado a
+        lado, isso impede que a primeira da lista "roube" a deteccao que na
+        verdade pertence a segunda.
+        """
+        pares = []
         for id_peca, peca in self._pecas.items():
-            if not livres:
-                break
-            mais_perto = min(
-                livres,
-                key=lambda f: (f.centro[0] - peca.centro[0]) ** 2
-                            + (f.centro[1] - peca.centro[1]) ** 2,
-            )
-            distancia = (
-                (mais_perto.centro[0] - peca.centro[0]) ** 2
-                + (mais_perto.centro[1] - peca.centro[1]) ** 2
-            ) ** 0.5
-            if distancia <= self.distancia_maxima:
-                casadas[id_peca] = mais_perto
-                # por identidade, nunca por ==: nao queremos comparar contornos
-                livres = [f for f in livres if f is not mais_perto]
+            for indice, forma in enumerate(formas):
+                d2 = ((forma.centro[0] - peca.centro[0]) ** 2
+                      + (forma.centro[1] - peca.centro[1]) ** 2)
+                if d2 <= self.distancia_maxima ** 2:
+                    pares.append((d2, id_peca, indice))
+        pares.sort()
 
+        casadas: dict[int, Forma] = {}
+        usadas: set[int] = set()
+        for _, id_peca, indice in pares:
+            if id_peca in casadas or indice in usadas:
+                continue
+            casadas[id_peca] = formas[indice]
+            usadas.add(indice)
         return casadas
 
     # ----------------------------------------------------------- ciclo ---
@@ -142,7 +156,7 @@ class Rastreador:
         """Consome as deteccoes de um quadro e devolve os despejos ocorridos."""
         despejos: list[Despejo] = []
         casadas = self._casar(formas)
-        usadas = set(id(f) for f in casadas.values())
+        usadas = set(id(f) for f in casadas.values())   # por identidade, nunca por ==
 
         # 1. pecas que continuam na cena
         for id_peca, forma in casadas.items():
@@ -157,7 +171,7 @@ class Rastreador:
             peca.quadros_sumida = 0
             peca.lado = self._lado_da_linha(forma.centro[0])
 
-            if (self.modo == "linha" and not peca.contada
+            if (self.modo == "linha" and not peca.contada and peca.e_peca
                     and anterior != 0 and peca.lado != anterior
                     and peca.quadros_vista >= self.minimo_para_contar):
                 peca.contada = True
@@ -172,7 +186,7 @@ class Rastreador:
                 continue
 
             # Sumiu de vez. No modo "saida" e aqui que ela e contada.
-            if (self.modo == "saida" and not peca.contada
+            if (self.modo == "saida" and not peca.contada and peca.e_peca
                     and peca.quadros_vista >= self.minimo_para_contar):
                 peca.contada = True
                 despejos.append(self._despejar(peca))

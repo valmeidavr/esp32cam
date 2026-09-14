@@ -33,7 +33,7 @@ nem de nenhum serviço externo.
 ### Passo a passo
 
 1. Baixe o instalador:
-   **[ClassificadorESP32CAM-Setup-1.0.1.exe](https://github.com/valmeidavr/esp32cam/releases/latest/download/ClassificadorESP32CAM-Setup-1.0.1.exe)**
+   **[ClassificadorESP32CAM-Setup-1.1.0.exe](https://github.com/valmeidavr/esp32cam/releases/latest/download/ClassificadorESP32CAM-Setup-1.1.0.exe)**
    (página com todas as versões: [Releases](https://github.com/valmeidavr/esp32cam/releases))
 2. Execute o instalador. O Windows pode mostrar o aviso *"o Windows protegeu o computador"*
    porque o programa não tem assinatura digital paga — clique em **Mais informações → Executar assim mesmo**.
@@ -75,7 +75,7 @@ como `USB-SERIAL CH340 (COMx)`, instale o driver do fabricante — há um atalho
 
 | Área | O que mostra |
 |---|---|
-| **Compartimento de vidro · câmera** | A imagem ao vivo. Cada peça recebe um número (`#7 triangulo`) e um contorno colorido. A linha tracejada é a **linha de despejo**. |
+| **Compartimento de vidro · câmera** | A imagem ao vivo. Cada peça recebe um número (`#7 triangulo`) e um contorno colorido. A linha tracejada é a **linha de despejo**; o retângulo azul é a **área da esteira** (se marcada). Abaixo, a esteira desenhada mostra as peças na posição em que estão. |
 | **Peça identificada** | A última peça que cruzou a linha, com a forma, o compartimento de destino e a confiança. |
 | **Compartimento de destino** | A caixa 2×2. O quadrante **acende** quando uma peça é destinada a ele, e o contador sobe. |
 | **Últimas peças** | Histórico com hora de cada peça. |
@@ -90,6 +90,38 @@ como `USB-SERIAL CH340 (COMx)`, instale o driver do fabricante — há um atalho
 | triângulo | **3 · Triângulo** |
 | estrela | **4 · Estrela** |
 | retângulo, pentágono, hexágono, outros | *sem compartimento* (contado à parte) |
+
+### Calibrar no local (faça isso antes da apresentação)
+
+O detector considera **peça** tudo que for *colorido* ou *escuro* sobre a esteira clara.
+Para ele não confundir a bancada, mãos ou o que estiver ao redor:
+
+1. **Marque a área da esteira.** Arraste o mouse sobre o vídeo desenhando um retângulo
+   que cubra só a esteira. Tudo fora dele é ignorado (fica escurecido no vídeo).
+   Para desfazer: *Ajustes → Área da esteira → Usar a imagem inteira*.
+2. **Veja o que o detector enxerga.** Em *Ajustes → Ver o que o detector enxerga* o vídeo
+   passa a mostrar em **branco** o que está sendo tratado como peça. O ideal é: peças
+   brancas e sólidas, esteira preta.
+   - Peça colorida aparecendo "furada" ou sumindo → aumente **Sensibilidade a cor**
+     (ou diminua se a esteira está aparecendo branca).
+   - Peça preta sumindo → aumente **Sensibilidade a escuro**; sombras aparecendo em
+     branco → diminua. Se a esteira for escura, deixe em 0 e use só peças coloridas.
+3. **Posicione a linha de despejo** onde a peça cai da esteira (*Ajustes → Linha de despejo*).
+4. Volte para a câmera e passe cada tipo de peça uma vez para conferir os quatro compartimentos.
+
+As regras de segurança que rodam sempre: contorno encostado na borda da área não conta
+(é uma peça entrando/saindo ou algo de fora), linhas finas e manchas sem forma são
+descartadas, "polígono" (forma não reconhecida) nunca entra na conta, e uma peça só cai
+num compartimento se **pelo menos 60 %** dos quadros concordaram com a forma — senão vai
+para *sem compartimento*.
+
+### Som
+
+O botão **Som** no cabeçalho alterna entre **voz** (o navegador fala "quadrado,
+compartimento 2"), **bipe** (um ritmo diferente para cada forma: 1 toque = círculo,
+2 = quadrado, 3 subindo = triângulo, arpejo = estrela) e **desligado**. Os navegadores
+só liberam áudio depois de um clique na página — um aviso amarelo lembra disso.
+A voz em português vem do próprio Windows/navegador, sem instalar nada.
 
 ### Como a contagem funciona
 

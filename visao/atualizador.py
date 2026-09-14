@@ -109,7 +109,7 @@ def verificar_e_atualizar(avisar=print) -> bool:
         return False
 
     if not ultima or not mais_nova(ultima["versao"]):
-        avisar(f"versao {VERSAO} — atualizada.")
+        avisar(f"versao {VERSAO} - atualizada.")
         return False
 
     avisar(f"\nNova versao disponivel: {ultima['versao']} (esta e a {VERSAO}).")
