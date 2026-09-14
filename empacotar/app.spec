@@ -5,7 +5,7 @@
 # %TEMP% a cada clique.
 
 import os
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 RAIZ = os.path.abspath(os.path.join(SPECPATH, ".."))
 VISAO = os.path.join(RAIZ, "visao")
@@ -18,6 +18,9 @@ a = Analysis(
         # o firmware acompanha o programa, para o "--gravar" funcionar em
         # qualquer PC sem precisar do PlatformIO
         (os.path.join(VISAO, "firmware", "esp32cam-formas.bin"), "firmware"),
+        # o esptool carrega os "stub flashers" de arquivos JSON dentro do
+        # pacote; sem eles a gravacao falha com "Flasher stub data is missing"
+        *collect_data_files("esptool"),
     ],
     hiddenimports=[
         "serial.tools.list_ports",
