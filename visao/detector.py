@@ -1,10 +1,15 @@
 """Deteccao e classificacao de formas geometricas.
 
-A imagem e separada em "peca" e "fundo" por cor: sobre a esteira clara, uma
-peca ou e colorida (saturacao alta) ou e escura. Isso rende regioes cheias,
-que viram poligonos limpos mesmo com a camera fora de foco — bem melhor do
-que procurar bordas, que saem picadas em imagem borrada e transformam a
-beirada de qualquer objeto em "forma".
+Ha dois jeitos de separar "peca" de "fundo", escolhidos pelo modo:
+
+  bordas  (padrao) detector de bordas (Canny). Enxerga qualquer coisa com
+          contorno nitido — inclusive uma forma so desenhada ou recortada em
+          papel, sem cor nem preenchimento. E o que funciona melhor com as
+          pecas usadas neste projeto.
+  cor     segmenta o que e colorido ou escuro sobre a esteira clara. Rende
+          regioes cheias e aguenta imagem borrada, mas nao ve peca clara e
+          sem cor.
+  ambos   uniao dos dois.
 
 A classificacao sai da geometria do contorno (vertices, circularidade,
 solidez); nao ha rede neural, roda offline e nao erra de um jeito
@@ -17,6 +22,8 @@ import cv2
 import numpy as np
 
 # Limiares padrao. Podem ser ajustados na pagina, com a visao da mascara.
+MODO_PADRAO = "bordas"
+MODOS = ("bordas", "cor", "ambos")
 SATURACAO_MINIMA = 90     # abaixo disso e "sem cor" (papel, esteira, cinza)
 ESCURO_MAXIMO = 70        # valor (brilho) abaixo disso e "escuro" (peca preta)
 AREA_MAXIMA = 0.70        # fracao da area util; maior que isso e o fundo, nao uma peca
@@ -56,17 +63,33 @@ CORES = {
 
 # ------------------------------------------------------------- segmentacao ---
 
-def segmentar(quadro: np.ndarray, sat_min: int = SATURACAO_MINIMA,
-              escuro: int = ESCURO_MAXIMO, roi=None) -> np.ndarray:
-    """Mascara 0/255 do que parece peca: colorido OU escuro, dentro da ROI."""
+def _mascara_por_bordas(quadro: np.ndarray) -> np.ndarray:
+    """Canny sobre a imagem em cinza; o dilate costura as bordas que sairam
+    picadas e o erode devolve a espessura. E o metodo original do projeto."""
+    cinza = cv2.GaussianBlur(cv2.cvtColor(quadro, cv2.COLOR_BGR2GRAY), (5, 5), 0)
+    bordas = cv2.Canny(cinza, 50, 150)
+    bordas = cv2.dilate(bordas, np.ones((3, 3), np.uint8), iterations=2)
+    return cv2.erode(bordas, np.ones((3, 3), np.uint8), iterations=1)
+
+
+def _mascara_por_cor(quadro: np.ndarray, sat_min: int, escuro: int) -> np.ndarray:
+    """Colorido OU escuro, com buracos pequenos fechados e pontinhos removidos."""
     hsv = cv2.cvtColor(cv2.GaussianBlur(quadro, (5, 5), 0), cv2.COLOR_BGR2HSV)
     s, v = hsv[..., 1], hsv[..., 2]
     mascara = ((s >= sat_min) | (v <= escuro)).astype(np.uint8) * 255
+    mascara = cv2.morphologyEx(mascara, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+    return cv2.morphologyEx(mascara, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
 
-    # fecha buracos pequenos (reflexos, textura) e tira pontinhos isolados
-    nucleo = np.ones((5, 5), np.uint8)
-    mascara = cv2.morphologyEx(mascara, cv2.MORPH_CLOSE, nucleo)
-    mascara = cv2.morphologyEx(mascara, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+
+def segmentar(quadro: np.ndarray, sat_min: int = SATURACAO_MINIMA,
+              escuro: int = ESCURO_MAXIMO, roi=None, modo: str = MODO_PADRAO) -> np.ndarray:
+    """Mascara 0/255 do que parece peca, conforme o modo, dentro da ROI."""
+    if modo == "cor":
+        mascara = _mascara_por_cor(quadro, sat_min, escuro)
+    elif modo == "ambos":
+        mascara = cv2.bitwise_or(_mascara_por_bordas(quadro), _mascara_por_cor(quadro, sat_min, escuro))
+    else:
+        mascara = _mascara_por_bordas(quadro)
 
     if roi is not None:
         x1, y1, x2, y2 = roi
@@ -151,7 +174,7 @@ def _classificar(contorno: np.ndarray, area: float):
 
 def detectar_com_mascara(quadro: np.ndarray, area_minima: int = 700,
                          sat_min: int = SATURACAO_MINIMA, escuro: int = ESCURO_MAXIMO,
-                         roi=None) -> tuple[list[Forma], np.ndarray]:
+                         roi=None, modo: str = MODO_PADRAO) -> tuple[list[Forma], np.ndarray]:
     """Devolve (formas da maior para a menor, mascara usada)."""
     altura, largura = quadro.shape[:2]
     if roi is None:
@@ -159,7 +182,7 @@ def detectar_com_mascara(quadro: np.ndarray, area_minima: int = 700,
     else:
         x1, y1, x2, y2 = roi
 
-    mascara = segmentar(quadro, sat_min, escuro, roi)
+    mascara = segmentar(quadro, sat_min, escuro, roi, modo)
     contornos, _ = cv2.findContours(mascara, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     area_util = max(1, (x2 - x1) * (y2 - y1))

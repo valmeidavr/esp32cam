@@ -2,6 +2,7 @@
 
 import cv2
 import numpy as np
+import pytest
 
 from detector import detectar, detectar_com_mascara, segmentar
 from rastreador import Rastreador
@@ -11,15 +12,40 @@ from conftest import ALTURA, LARGURA, desenhar, quadro_vazio
 AMARELO = (40, 220, 240)      # BGR: bloco de espuma amarelo, claro como o fundo
 
 
-def test_peca_colorida_clara_e_detectada():
-    """Amarelo sobre cinza-claro nao tem contraste em cinza; tem em saturacao."""
+def _amarelo_sobre_cinza():
+    """Amarelo sobre cinza-claro: quase nenhum contraste em cinza, muito em saturacao."""
     img = np.full((ALTURA, LARGURA, 3), 200, np.uint8)
     cv2.rectangle(img, (110, 70), (210, 170), AMARELO, -1)
-    assert [f.nome for f in detectar(img)] == ["quadrado"]
+    return img
 
 
-def test_peca_escura_e_detectada(cena):
-    assert [f.nome for f in detectar(cena([("circulo", 160, 120)]))] == ["circulo"]
+@pytest.mark.parametrize("modo", ["cor", "ambos"])
+def test_peca_colorida_clara_e_detectada_por_cor(modo):
+    assert [f.nome for f in detectar(_amarelo_sobre_cinza(), modo=modo)] == ["quadrado"]
+
+
+def test_forma_so_desenhada_no_papel_e_detectada_por_bordas():
+    """Um circulo desenhado a lapis (traco cinza, sem preenchimento): nao e
+    colorido nem escuro, entao o modo por cor nao ve nada; o por bordas ve."""
+    img = quadro_vazio()
+    cv2.circle(img, (160, 120), 40, (150, 150, 150), 3)
+    assert [f.nome for f in detectar(img, modo="bordas")] == ["circulo"]
+    assert detectar(img, modo="cor") == []
+    # a caneta preta os dois veem
+    img = quadro_vazio()
+    cv2.circle(img, (160, 120), 40, (30, 30, 30), 3)
+    assert [f.nome for f in detectar(img, modo="bordas")] == ["circulo"]
+    assert [f.nome for f in detectar(img, modo="cor")] == ["circulo"]
+
+
+@pytest.mark.parametrize("modo", ["bordas", "cor", "ambos"])
+def test_peca_escura_e_detectada_em_todos_os_modos(cena, modo):
+    assert [f.nome for f in detectar(cena([("circulo", 160, 120)]), modo=modo)] == ["circulo"]
+
+
+def test_modo_padrao_e_bordas():
+    from detector import MODO_PADRAO
+    assert MODO_PADRAO == "bordas"
 
 
 def test_fundo_com_gradiente_de_luz_nao_vira_peca():
@@ -64,18 +90,20 @@ def test_mancha_irregular_vira_poligono_nao_estrela():
 
 
 def test_mascara_respeita_limiares():
-    img = np.full((ALTURA, LARGURA, 3), 200, np.uint8)
-    cv2.rectangle(img, (110, 70), (210, 170), AMARELO, -1)
-    assert segmentar(img, sat_min=90, escuro=70).sum() > 0
-    assert segmentar(img, sat_min=250, escuro=0).sum() == 0     # nada e "colorido" o bastante
+    img = _amarelo_sobre_cinza()
+    assert segmentar(img, sat_min=90, escuro=70, modo="cor").sum() > 0
+    assert segmentar(img, sat_min=250, escuro=0, modo="cor").sum() == 0   # nada e "colorido" o bastante
 
 
 def test_detectar_com_mascara_devolve_os_dois():
     img = quadro_vazio()
     desenhar(img, "circulo", 160, 120)
-    formas, mascara = detectar_com_mascara(img)
+    formas, mascara = detectar_com_mascara(img, modo="cor")
     assert len(formas) == 1 and mascara.shape == (ALTURA, LARGURA)
     assert mascara[120, 160] == 255 and mascara[10, 10] == 0
+    # no modo por bordas a mascara e so o contorno: miolo vazio, borda cheia
+    formas, mascara = detectar_com_mascara(img, modo="bordas")
+    assert len(formas) == 1 and mascara[120, 160] == 0 and mascara.sum() > 0
 
 
 # ------------------------------------------------------- regras de contagem ---

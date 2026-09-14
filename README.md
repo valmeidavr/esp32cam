@@ -33,7 +33,7 @@ nem de nenhum serviço externo.
 ### Passo a passo
 
 1. Baixe o instalador:
-   **[ClassificadorESP32CAM-Setup-1.1.0.exe](https://github.com/valmeidavr/esp32cam/releases/latest/download/ClassificadorESP32CAM-Setup-1.1.0.exe)**
+   **[ClassificadorESP32CAM-Setup-1.1.1.exe](https://github.com/valmeidavr/esp32cam/releases/latest/download/ClassificadorESP32CAM-Setup-1.1.1.exe)**
    (página com todas as versões: [Releases](https://github.com/valmeidavr/esp32cam/releases))
 2. Execute o instalador. O Windows pode mostrar o aviso *"o Windows protegeu o computador"*
    porque o programa não tem assinatura digital paga — clique em **Mais informações → Executar assim mesmo**.
@@ -93,7 +93,14 @@ como `USB-SERIAL CH340 (COMx)`, instale o driver do fabricante — há um atalho
 
 ### Calibrar no local (faça isso antes da apresentação)
 
-O detector considera **peça** tudo que for *colorido* ou *escuro* sobre a esteira clara.
+Há dois jeitos de o detector separar peça de fundo, em *Ajustes → Como identificar a peça*:
+
+| Modo | Como funciona | Use quando |
+|---|---|---|
+| **pelas bordas** (padrão) | Procura contornos nítidos | Peças desenhadas ou recortadas em papel, qualquer coisa com borda bem definida |
+| **pela cor/escuridão** | Tudo que for colorido ou escuro sobre a esteira clara | Peças coloridas (blocos, EVA) ou pretas; imagem borrada |
+| **os dois juntos** | União dos dois | Mistura de peças; na dúvida, teste este |
+
 Para ele não confundir a bancada, mãos ou o que estiver ao redor:
 
 1. **Marque a área da esteira.** Arraste o mouse sobre o vídeo desenhando um retângulo

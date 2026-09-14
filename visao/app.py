@@ -47,6 +47,7 @@ class Estado:
         self.sat_min = detector.SATURACAO_MINIMA
         self.escuro = detector.ESCURO_MAXIMO
         self.roi = None            # (x1, y1, x2, y2) da area da esteira, ou None = tudo
+        self.modo_deteccao = detector.MODO_PADRAO   # bordas | cor | ambos
         self.ver_mascara = False   # visao de calibracao: o que o detector enxerga
 
         self.rastreador = Rastreador(largura=320)
@@ -108,9 +109,10 @@ def laco_de_visao() -> None:
 def _processar_quadro(quadro) -> None:
     with estado.trava:
         roi, sat_min, escuro = estado.roi, estado.sat_min, estado.escuro
-        ver_mascara = estado.ver_mascara
+        ver_mascara, modo = estado.ver_mascara, estado.modo_deteccao
     formas, mascara = detector.detectar_com_mascara(
-        quadro, area_minima=estado.area_minima, sat_min=sat_min, escuro=escuro, roi=roi)
+        quadro, area_minima=estado.area_minima, sat_min=sat_min, escuro=escuro,
+        roi=roi, modo=modo)
 
     with estado.trava:
         rastreador = estado.rastreador
@@ -200,6 +202,7 @@ class Servidor(BaseHTTPRequestHandler):
                 "escuro": estado.escuro,
                 "roi": estado.roi,
                 "mascara": estado.ver_mascara,
+                "deteccao": estado.modo_deteccao,
                 "versao": VERSAO,
             }
         return json.dumps(dados).encode()
@@ -222,6 +225,8 @@ class Servidor(BaseHTTPRequestHandler):
                 estado.ver_mascara = consulta["mascara"][0] == "1"
             if "roi" in consulta:
                 estado.roi = _ler_roi(consulta["roi"][0])
+            if "deteccao" in consulta and consulta["deteccao"][0] in detector.MODOS:
+                estado.modo_deteccao = consulta["deteccao"][0]
         if "qualidade" in consulta:
             camera.comando(f"Q{int(consulta['qualidade'][0])}")
         if "flash" in consulta:

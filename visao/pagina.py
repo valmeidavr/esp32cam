@@ -250,6 +250,12 @@ PAGINA = r"""<!doctype html>
       <input id="area" type="range" min="200" max="6000" step="100" value="700"></label>
 
     <h3>O que é peça (calibração)</h3>
+    <label>Como identificar a peça
+      <select id="deteccao">
+        <option value="bordas">pelas bordas (padrão — serve para desenhos e recortes)</option>
+        <option value="cor">pela cor/escuridão (peças coloridas ou pretas)</option>
+        <option value="ambos">os dois juntos</option>
+      </select></label>
     <label>Sensibilidade a cor <span id="sat-v">90</span>
       <input id="sat" type="range" min="20" max="200" value="90"></label>
     <label>Sensibilidade a escuro <span id="escuro-v">70</span>
@@ -494,6 +500,7 @@ Milena Maia, Milena Rodrigues · Apoio: Prof. Vinicius (Tecnologia) · © 2026 T
     const sinc = (id, valor) => { if (document.activeElement !== $(id)) { $(id).value = valor; $(id + '-v').textContent = valor; } };
     sinc('linha', d.linha); sinc('area', d.area); sinc('sat', d.sat); sinc('escuro', d.escuro);
     $('modo').value = d.modo;
+    if (d.deteccao) $('deteccao').value = d.deteccao;
     $('mascara').classList.toggle('ligado', d.mascara);
     $('mascara').textContent = d.mascara ? 'Voltar para a câmera' : 'Ver o que o detector enxerga';
     $('limpar-roi').textContent = d.roi ? `Usar a imagem inteira (área: ${d.roi.join(',')})` : 'Usar a imagem inteira (nenhuma área marcada)';
@@ -510,6 +517,7 @@ Milena Maia, Milena Rodrigues · Apoio: Prof. Vinicius (Tecnologia) · © 2026 T
   deslizante('linha', 'linha'); deslizante('area', 'area'); deslizante('qual', 'qualidade');
   deslizante('sat', 'sat'); deslizante('escuro', 'escuro');
   $('modo').onchange = e => ajustar('modo=' + e.target.value);
+  $('deteccao').onchange = e => ajustar('deteccao=' + e.target.value);
 
   let mascaraLigada = false;
   $('mascara').onclick = () => { mascaraLigada = !mascaraLigada; ajustar('mascara=' + (mascaraLigada ? 1 : 0)); };
