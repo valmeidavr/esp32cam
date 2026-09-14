@@ -1,0 +1,2 @@
+-r ../visao/requirements.txt
+pytest>=8.0

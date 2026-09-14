@@ -144,6 +144,40 @@ python visao\app.py --demo     # sem a placa
 Opções úteis: `--porta COM7` força a porta · `--http 8001` muda a porta web ·
 `--so-local` desliga o acesso pela rede · `--sem-navegador`.
 
+### Testar
+
+Há uma suíte automatizada que não precisa da placa — ela desenha peças sintéticas,
+simula a serial e sobe o servidor web num processo de teste:
+
+```powershell
+python -m pip install -r testes\requirements-dev.txt
+python -m pytest                       # tudo (~6 s)
+python -m pytest testes\test_detector.py -v      # só o detector, detalhado
+```
+
+| Arquivo | O que verifica |
+|---|---|
+| `test_detector.py` | Cada forma é reconhecida, inclusive girada; ruído e a moldura da imagem são ignorados |
+| `test_rastreador.py` | Uma contagem por peça, compartimento certo, voto da maioria, modo "sair da imagem" |
+| `test_ponte.py` | Decodificação dos quadros da serial, ressincronização após lixo, DTR/RTS baixos |
+| `test_deteccao_porta.py` | Escolha da porta COM com 0, 1 ou várias placas |
+| `test_app.py` | Servidor web completo sobre a esteira simulada: página, `/estado`, `/stream`, ajustes, zerar |
+| `test_firmware.py` | O binário do firmware que vai no instalador está íntegro |
+
+Os mesmos testes rodam no GitHub Actions a cada push (aba **Actions** do repositório).
+
+**Com a placa ligada**, o roteiro manual é curto:
+
+1. `python visao\app.py` → a janela deve dizer `ESP32-CAM encontrada: CH340 em COMx` e
+   `camera respondendo`, e o navegador abrir com a imagem ao vivo a 15–20 fps.
+2. Ponha uma peça escura sobre fundo claro na frente da câmera: ela ganha contorno e
+   rótulo (`#1 circulo`) na imagem.
+3. Arraste a peça da esquerda para a direita, cruzando a linha tracejada: o quadrante
+   correspondente acende, o contador sobe **uma** vez e a peça entra em *Últimas peças*.
+4. Puxe o cabo USB e ligue de novo: o LED do cabeçalho fica vermelho e volta a verde em
+   ~2 s, sem reiniciar o programa.
+5. Abra o endereço `http://<ip>:8000` no celular, no mesmo Wi-Fi: mesma página, mesmos números.
+
 ### Gerar o instalador
 
 ```powershell
