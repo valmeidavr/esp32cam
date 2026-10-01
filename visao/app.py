@@ -324,7 +324,8 @@ def main() -> int:
     print(f"  ESP32-CAM  -  classificacao de pecas na esteira   v{VERSAO}")
     print("  ETPC - Escola Tecnica  |  (c) 2026 Todos os direitos reservados")
     print("  Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza,")
-    print("  Milena Maia, Milena Rodrigues  |  Apoio: Prof. Vinicius")
+    print("  Milena Maia, Milena Rodrigues")
+    print("  Apoio: Prof. Vinicius (Tecnologia), Prof. Pedro Vasconcelos (Mecatronica)")
     print("=" * 60)
 
     if not opcoes.sem_atualizar and not opcoes.gravar:

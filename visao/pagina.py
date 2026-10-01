@@ -274,7 +274,7 @@ PAGINA = r"""<!doctype html>
 <p class="rodape">Detecção por cor e forma (OpenCV) no PC · imagem chegando pela USB ·
 cada peça é rastreada e contada uma única vez ao cruzar a linha de despejo.</p>
 <p class="rodape creditos"><b>ETPC — Escola Técnica</b> · Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza,
-Milena Maia, Milena Rodrigues · Apoio: Prof. Vinicius (Tecnologia) · © 2026 Todos os direitos reservados</p>
+Milena Maia, Milena Rodrigues · Apoio: Prof. Vinicius (Tecnologia) e Prof. Pedro Vasconcelos (Mecatrônica) · © 2026 Todos os direitos reservados</p>
 
 <div class="veu" id="veu">
   <div class="modal" role="dialog" aria-modal="true">

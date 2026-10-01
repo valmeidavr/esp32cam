@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 310" role="img" aria-label="GPIO 18 vai ao sinal do servo de giro, GPIO 19 ao sinal do servo de despejo. A fonte de 5 V alimenta os dois servos e o GND é comum a ESP32, fonte e servos.">
+          <rect class="caixa forte" x="40" y="40" width="200" height="230" rx="6"/>
+          <text class="tb" x="140" y="68" text-anchor="middle">ESP32 (COM5)</text>
+          <text class="tm" x="140" y="88" text-anchor="middle">cabo USB ao PC</text>
+          <text class="porta" x="226" y="104" text-anchor="end">GPIO 18</text>
+          <text class="porta" x="226" y="154" text-anchor="end">GPIO 19</text>
+          <text class="porta" x="226" y="204" text-anchor="end">GND</text>
+
+          <rect class="caixa" x="470" y="40" width="200" height="74" rx="6"/>
+          <text class="tb" x="570" y="68" text-anchor="middle">Servo de giro</text>
+          <text class="tm" x="570" y="88" text-anchor="middle">sinal · 5 V · GND</text>
+
+          <rect class="caixa" x="470" y="134" width="200" height="74" rx="6"/>
+          <text class="tb" x="570" y="162" text-anchor="middle">Servo de despejo</text>
+          <text class="tm" x="570" y="182" text-anchor="middle">sinal · 5 V · GND</text>
+
+          <rect class="caixa" x="470" y="228" width="200" height="56" rx="6"/>
+          <text class="tb" x="570" y="253" text-anchor="middle">Fonte 5 V externa</text>
+          <text class="tm" x="570" y="271" text-anchor="middle">não use o 5 V do USB</text>
+
+          <!-- sinais -->
+          <path class="fio-c" d="M240 100 H350 L370 77 H468"/>
+          <text class="tm" x="395" y="68">sinal</text>
+          <path class="fio-c" d="M240 150 H350 L370 171 H468"/>
+          <text class="tm" x="395" y="188">sinal</text>
+
+          <!-- GND comum -->
+          <path class="fio-g" d="M240 200 H330 V262 H468"/>
+          <text class="tm" x="340" y="232">GND comum</text>
+
+          <!-- 5 V -->
+          <path class="fio-p" d="M670 256 H704 V94 H672"/>
+          <path class="fio-p" d="M704 188 H672"/>
+          <text class="tm" x="712" y="150" transform="rotate(90 712 150)" text-anchor="middle">5 V</text>
+        </svg>

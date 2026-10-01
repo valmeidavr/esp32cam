@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" role="img" aria-label="A ESP32-CAM na COM3 filma a esteira e envia as imagens ao PC. O PC mostra a página web e envia o número de 1 a 4 ao ESP32 da COM5, que move os servos de giro e de despejo.">
+          <style>
+:root{
+    --bg: #f3f5f7;
+    --panel: #ffffff;
+    --fg: #17212b;
+    --muted: #5b6875;
+    --line: #9aa7b4;
+    --dados: #1f6feb;      /* imagem e dados */
+    --cmd: #d9640b;        /* comandos e movimento */
+    --power: #c62828;      /* alimentação 5 V */
+    --circulo: #cfe3ff;
+    --quadrado: #ffe2c2;
+    --triangulo: #d4f0d8;
+    --estrela: #f7d4ef;
+    --ink-on-tint: #17212b;
+    --sans: system-ui, "Segoe UI", sans-serif;
+    --mono: ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root {
+      --bg: #0f151b; --panel: #18212a; --fg: #e6edf3; --muted: #93a1af; --line: #5d6b79;
+      --dados: #5aa2ff; --cmd: #ff9a4d; --power: #ff6b6b;
+      --circulo: #1f3a5c; --quadrado: #5a3b1c; --triangulo: #1f4a2a; --estrela: #5a2a4f;
+      --ink-on-tint: #e6edf3; color-scheme: dark;
+    } }
+svg{background:var(--panel)}
+/* elementos do desenho */
+  .caixa { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+  .forte { stroke: var(--fg); stroke-width: 2; }
+  .t { fill: var(--fg); font-family: var(--sans); font-size: 13px; }
+  .tb { fill: var(--fg); font-family: var(--sans); font-size: 14px; font-weight: 700; }
+  .tm { fill: var(--muted); font-family: var(--sans); font-size: 12px; }
+  .porta { fill: var(--fg); font-family: var(--mono); font-size: 12px; font-weight: 500; }
+  .fio-d { stroke: var(--dados); stroke-width: 2.5; fill: none; }
+  .fio-c { stroke: var(--cmd); stroke-width: 2.5; fill: none; }
+  .fio-p { stroke: var(--power); stroke-width: 2.5; fill: none; }
+  .fio-g { stroke: var(--muted); stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+  .tracejado { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+  .peca { stroke: var(--fg); stroke-width: 1.5; }
+  .cel1 { fill: var(--circulo); stroke: var(--line); }
+  .cel2 { fill: var(--quadrado); stroke: var(--line); }
+  .cel3 { fill: var(--triangulo); stroke: var(--line); }
+  .cel4 { fill: var(--estrela); stroke: var(--line); }
+  .num { fill: var(--ink-on-tint); font-family: var(--sans); font-size: 20px; font-weight: 700; }
+  .nome { fill: var(--ink-on-tint); font-family: var(--sans); font-size: 13px; }
+
+</style>
+<defs>
+            <marker id="seta-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--dados)"/></marker>
+            <marker id="seta-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--cmd)"/></marker>
+            <marker id="seta-p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--power)"/></marker>
+          </defs>
+
+          <!-- ESP32-CAM -->
+          <rect class="caixa forte" x="30" y="40" width="190" height="90" rx="6"/>
+          <text class="tb" x="125" y="68" text-anchor="middle">ESP32-CAM</text>
+          <text class="porta" x="125" y="88" text-anchor="middle">COM3</text>
+          <text class="tm" x="125" y="110" text-anchor="middle">só filma · já funciona</text>
+          <circle cx="125" cy="150" r="0" fill="none"/>
+          <path class="tracejado" d="M125 130 V222"/>
+          <text class="tm" x="133" y="180">filma</text>
+
+          <!-- esteira -->
+          <rect class="caixa" x="30" y="226" width="190" height="44" rx="4"/>
+          <circle class="peca" cx="58" cy="248" r="10" fill="var(--circulo)"/>
+          <rect class="peca" x="84" y="238" width="20" height="20" fill="var(--quadrado)"/>
+          <path class="peca" d="M130 258 L140 238 L150 258 z" fill="var(--triangulo)"/>
+          <path class="peca" d="M180 236 L183 244 L192 244 L185 249 L188 258 L180 253 L172 258 L175 249 L168 244 L177 244 z" fill="var(--estrela)"/>
+          <text class="tm" x="125" y="294" text-anchor="middle">esteira  →</text>
+          <path class="tracejado" d="M205 218 V278"/>
+          <text class="tm" x="205" y="312" text-anchor="middle">linha de despejo</text>
+
+          <!-- USB da câmera -->
+          <path class="fio-d" d="M220 85 H378" marker-end="url(#seta-d)"/>
+          <text class="porta" x="299" y="74" text-anchor="middle">USB · COM3</text>
+          <text class="tm" x="299" y="106" text-anchor="middle">imagens JPEG</text>
+
+          <!-- PC -->
+          <rect class="caixa forte" x="380" y="30" width="220" height="200" rx="6"/>
+          <text class="tb" x="490" y="56" text-anchor="middle">PC com Windows</text>
+          <text class="tm" x="490" y="74" text-anchor="middle">programa Python + OpenCV</text>
+          <text class="t" x="398" y="108">1 · recebe a imagem</text>
+          <text class="t" x="398" y="132">2 · reconhece a forma</text>
+          <text class="t" x="398" y="156">3 · acompanha cada peça</text>
+          <text class="t" x="398" y="180">4 · peça cruza a linha</text>
+          <text class="tb" x="398" y="210" style="fill: var(--cmd)">   → número 1, 2, 3 ou 4</text>
+
+          <!-- página web -->
+          <path class="fio-d" d="M600 85 H738" marker-end="url(#seta-d)"/>
+          <text class="porta" x="669" y="74" text-anchor="middle">http :8000</text>
+          <rect class="caixa" x="740" y="40" width="190" height="90" rx="6"/>
+          <text class="tb" x="835" y="68" text-anchor="middle">Página web</text>
+          <text class="tm" x="835" y="88" text-anchor="middle">no PC e no celular da banca</text>
+          <text class="tm" x="835" y="106" text-anchor="middle">vídeo, caixa e contagem</text>
+
+          <!-- PC -> separador -->
+          <path class="fio-c" d="M490 230 V308" marker-end="url(#seta-c)"/>
+          <text class="porta" x="502" y="262">USB · COM5</text>
+          <text class="tm" x="502" y="282">manda "1", "2", "3" ou "4"</text>
+
+          <!-- ESP32 dos servos -->
+          <rect class="caixa forte" x="380" y="312" width="220" height="130" rx="6"/>
+          <text class="tb" x="490" y="342" text-anchor="middle">ESP32 dos servos</text>
+          <text class="porta" x="490" y="362" text-anchor="middle">COM5</text>
+          <text class="tm" x="490" y="384" text-anchor="middle">separador.ino</text>
+          <text class="tm" x="490" y="402" text-anchor="middle">espera a peça cair, gira,</text>
+          <text class="tm" x="490" y="418" text-anchor="middle">despeja e volta ao repouso</text>
+
+          <!-- servos -->
+          <path class="fio-c" d="M600 332 H738" marker-end="url(#seta-c)"/>
+          <text class="porta" x="669" y="322" text-anchor="middle">GPIO 18</text>
+          <rect class="caixa" x="740" y="300" width="190" height="64" rx="6"/>
+          <text class="tb" x="835" y="328" text-anchor="middle">Servo de giro</text>
+          <text class="tm" x="835" y="348" text-anchor="middle">esquerda / direita</text>
+
+          <path class="fio-c" d="M600 412 H738" marker-end="url(#seta-c)"/>
+          <text class="porta" x="669" y="402" text-anchor="middle">GPIO 19</text>
+          <rect class="caixa" x="740" y="380" width="190" height="64" rx="6"/>
+          <text class="tb" x="835" y="408" text-anchor="middle">Servo de despejo</text>
+          <text class="tm" x="835" y="428" text-anchor="middle">vira a caçamba</text>
+
+          <!-- fonte -->
+          <path class="fio-p" d="M835 478 V446" marker-end="url(#seta-p)"/>
+          <rect class="caixa" x="740" y="478" width="190" height="34" rx="6"/>
+          <text class="tb" x="835" y="500" text-anchor="middle">Fonte 5 V externa</text>
+          <text class="tm" x="728" y="499" text-anchor="end">alimenta os servos</text>
+        </svg>

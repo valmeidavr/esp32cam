@@ -1,7 +1,7 @@
 # Classificador de peças — ESP32-CAM
 
 **Projeto da ETPC — Escola Técnica** · Matheus Pedrosa, Carlos Eduardo Borges,
-Maria Eduarda Mazza, Milena Maia e Milena Rodrigues · Apoio: Prof. Vinicius (Tecnologia)
+Maria Eduarda Mazza, Milena Maia e Milena Rodrigues · Apoio: Prof. Vinicius (Tecnologia) e Prof. Pedro Vasconcelos (Mecatrônica)
 
 Sistema de visão computacional que identifica a **forma geométrica** das peças que
 passam numa esteira (círculo, quadrado, triângulo, estrela) e mostra, em tempo real
@@ -19,6 +19,20 @@ nem de nenhum serviço externo.
                                              navegador do PC ◀──────────┤
                                              celular da banca ◀─────────┘
 ```
+
+## O projeto em desenho
+
+### Visão geral
+
+![Visão geral do projeto](docs/desenho/1-visao-geral.svg)
+
+### A caixa vista de cima
+
+![Caixa com os 4 compartimentos e a caçamba](docs/desenho/2-caixa-vista-de-cima.svg)
+
+### Ligações do ESP32 dos servos
+
+![Ligações dos servos](docs/desenho/3-ligacoes-servos.svg)
 
 ---
 
@@ -334,6 +348,6 @@ Projeto desenvolvido na **ETPC — Escola Técnica** por:
 - Milena Maia
 - Milena Rodrigues
 
-Apoio: **Prof. Vinicius** (Tecnologia).
+Apoio: **Prof. Vinicius** (Tecnologia) e **Prof. Pedro Vasconcelos** (Mecatrônica).
 
 © 2026 ETPC. Todos os direitos reservados. Ver [COPYRIGHT](COPYRIGHT).

@@ -11,7 +11,7 @@
   #define Versao    "0.0.0"
 #endif
 #define Autor       "ETPC - Escola Técnica"
-#define Copyright   "© 2026 ETPC. Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza, Milena Maia, Milena Rodrigues. Apoio: Prof. Vinicius (Tecnologia). Todos os direitos reservados."
+#define Copyright   "© 2026 ETPC. Matheus Pedrosa, Carlos Eduardo Borges, Maria Eduarda Mazza, Milena Maia, Milena Rodrigues. Apoio: Prof. Vinicius (Tecnologia) e Prof. Pedro Vasconcelos (Mecatrônica). Todos os direitos reservados."
 #define Site        "https://github.com/valmeidavr/esp32cam"
 #define Exe         "ClassificadorESP32CAM.exe"
 #define Origem      "..\dist\ClassificadorESP32CAM"
