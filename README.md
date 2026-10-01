@@ -47,7 +47,7 @@ nem de nenhum serviço externo.
 ### Passo a passo
 
 1. Baixe o instalador:
-   **[ClassificadorESP32CAM-Setup-1.1.2.exe](https://github.com/valmeidavr/esp32cam/releases/latest/download/ClassificadorESP32CAM-Setup-1.1.2.exe)**
+   **[ClassificadorESP32CAM-Setup-1.1.1.exe](https://github.com/valmeidavr/esp32cam/releases/latest/download/ClassificadorESP32CAM-Setup-1.1.1.exe)**
    (página com todas as versões: [Releases](https://github.com/valmeidavr/esp32cam/releases))
 2. Execute o instalador. O Windows pode mostrar o aviso *"o Windows protegeu o computador"*
    porque o programa não tem assinatura digital paga — clique em **Mais informações → Executar assim mesmo**.
