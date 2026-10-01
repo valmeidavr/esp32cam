@@ -50,3 +50,12 @@ def test_porta_indicada_vence_a_deteccao(portas):
     portas([porta("COM3", 0x1A86, 0x7523)])
     escolhida, _ = deteccao_porta.encontrar("COM7")
     assert escolhida == "COM7"
+
+
+def test_ignora_a_porta_do_separador(portas):
+    portas([porta("COM3", 0x1A86, 0x7523), porta("COM5", 0x1A86, 0x7523)])
+    escolhida, msg = deteccao_porta.encontrar(ignorar="COM5")
+    assert escolhida == "COM3"
+    assert "mais de uma" not in msg
+    escolhida, _ = deteccao_porta.encontrar(ignorar="com3")
+    assert escolhida == "COM5"

@@ -91,6 +91,22 @@ como `USB-SERIAL CH340 (COMx)`, instale o driver do fabricante — há um atalho
 | estrela | **4 · Estrela** |
 | retângulo, pentágono, hexágono, outros | *sem compartimento* (contado à parte) |
 
+### Separador com servos (segundo ESP32, COM5)
+
+Um segundo ESP32, ligado em outra porta USB, move a caçamba. O programa manda
+para ele **um número por peça** (1 círculo, 2 quadrado, 3 triângulo, 4 estrela)
+no instante em que a peça cruza a linha de despejo. Peças sem compartimento
+não movem nada.
+
+- Firmware: [separador/separador.ino](separador/separador.ino) (Arduino IDE, placa *ESP32 Dev Module*).
+- Ligações: servo de **giro** no GPIO **18**, servo de **despejo** no GPIO **19**,
+  fios de sinal. Os servos precisam de **5 V de uma fonte própria**, com o GND
+  ligado ao GND do ESP32.
+- Caixa vista de cima: 1 círculo e 2 quadrado em cima; 3 triângulo e 4 estrela embaixo.
+- Calibração: no Monitor Serial (115200) mande `G90` ou `D120` para mover cada
+  servo e copie os ângulos para as tabelas no começo do `.ino`.
+- No PC: `--separador COM7` troca a porta (padrão COM5); `--sem-separador` roda só com a câmera.
+
 ### Calibrar no local (faça isso antes da apresentação)
 
 Há dois jeitos de o detector separar peça de fundo, em *Ajustes → Como identificar a peça*:

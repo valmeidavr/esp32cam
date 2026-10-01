@@ -6,6 +6,8 @@ esteira e mostra em qual compartimento cada uma cai.
     python app.py --so-local       nao aceita acesso de outros aparelhos
     python app.py --demo           esteira simulada, sem precisar da placa
     python app.py --gravar         regrava o firmware na placa
+    python app.py --separador COM7 outra porta para o ESP32 dos servos (padrao COM5)
+    python app.py --sem-separador  roda so com a camera, sem os servos
 """
 
 import argparse
@@ -28,6 +30,7 @@ import rede
 from pagina import PAGINA
 from ponte import Camera
 from rastreador import Rastreador
+from separador import Separador
 from versao import VERSAO
 
 LIMITE = b"--quadro"
@@ -65,6 +68,7 @@ class Estado:
 
 estado = Estado()
 camera: Camera | None = None
+separador: Separador | None = None     # ESP32 dos servos; None = rodando so com a camera
 
 
 def laco_de_visao() -> None:
@@ -121,6 +125,8 @@ def _processar_quadro(quadro) -> None:
         for d in despejos:
             estado.contagens[d.compartimento] += 1
             estado.serie += 1
+            if separador is not None:
+                separador.enviar(d.compartimento)
             estado.eventos.appendleft({
                 "id": d.id, "forma": d.forma,
                 "compartimento": d.compartimento,
@@ -194,6 +200,11 @@ class Servidor(BaseHTTPRequestHandler):
                 "processados": estado.quadros_processados,
                 "perdidos": camera.quadros_descartados,
                 "conectada": camera.conectada,
+                "separador": None if separador is None else {
+                    "porta": separador.porta,
+                    "conectado": separador.conectado,
+                    "enviados": separador.enviados,
+                },
                 "porta": camera.porta,
                 "linha": estado.rastreador.linha,
                 "modo": estado.rastreador.modo,
@@ -281,7 +292,7 @@ def _pausar_se_clicado() -> None:
 
 
 def main() -> int:
-    global camera
+    global camera, separador
 
     # Descarregar cada linha na hora: no .exe congelado, com a saida redirecionada
     # para arquivo ou outro programa, o Python segura tudo ate sair e o log fica vazio.
@@ -293,6 +304,10 @@ def main() -> int:
     argumentos.add_argument("--porta", default=None,
                             help="porta serial (padrao: descobre sozinho)")
     argumentos.add_argument("--baud", type=int, default=921600)
+    argumentos.add_argument("--separador", default="COM5",
+                            help="porta do ESP32 dos servos (padrao: COM5)")
+    argumentos.add_argument("--sem-separador", action="store_true",
+                            help="nao usar o ESP32 dos servos")
     argumentos.add_argument("--http", type=int, default=8000)
     argumentos.add_argument("--so-local", action="store_true",
                             help="aceitar so este PC, sem acesso pela rede")
@@ -323,7 +338,8 @@ def main() -> int:
         camera = EsteiraSimulada()
         porta = camera.porta
     else:
-        porta, explicacao = deteccao_porta.encontrar(opcoes.porta)
+        porta, explicacao = deteccao_porta.encontrar(
+            opcoes.porta, ignorar=None if opcoes.sem_separador else opcoes.separador)
         print(f"\n{explicacao}")
         if porta is None:
             _pausar_se_clicado()
@@ -337,6 +353,11 @@ def main() -> int:
 
         camera = Camera(porta, opcoes.baud)
     camera.iniciar()
+
+    if not opcoes.sem_separador and not opcoes.gravar:
+        separador = Separador(opcoes.separador)
+        separador.iniciar()
+        print(f"separador (servos): enviando os numeros 1-4 para {opcoes.separador}")
 
     print("aguardando o primeiro quadro...")
     if not camera.esperar_conexao(12.0):
@@ -382,6 +403,8 @@ def main() -> int:
         print("\nencerrando...")
     finally:
         camera.parar()
+        if separador is not None:
+            separador.parar()
         servidor.server_close()
     return 0
 

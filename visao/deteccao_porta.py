@@ -18,10 +18,14 @@ CHIPS_CONHECIDOS = {
 }
 
 
-def listar_candidatas() -> list[tuple[str, str]]:
-    """Portas que parecem ser uma ESP32, como (porta, descricao)."""
+def listar_candidatas(ignorar: str | None = None) -> list[tuple[str, str]]:
+    """Portas que parecem ser uma ESP32, como (porta, descricao).
+
+    `ignorar` e a porta do ESP32 dos servos: ela nao e a camera."""
     achadas = []
     for p in list_ports.comports():
+        if ignorar and p.device.upper() == ignorar.upper():
+            continue
         chip = CHIPS_CONHECIDOS.get((p.vid, p.pid))
         if chip:
             achadas.append((p.device, f"{chip} em {p.device}"))
@@ -33,7 +37,7 @@ def listar_todas() -> list[tuple[str, str]]:
     return [(p.device, f"{p.device} — {p.description}") for p in list_ports.comports()]
 
 
-def encontrar(preferida: str | None = None) -> tuple[str | None, str]:
+def encontrar(preferida: str | None = None, ignorar: str | None = None) -> tuple[str | None, str]:
     """Escolhe a porta a usar.
 
     Devolve (porta, explicacao). A porta vem None quando nao da para decidir
@@ -42,7 +46,7 @@ def encontrar(preferida: str | None = None) -> tuple[str | None, str]:
     if preferida:
         return preferida, f"usando a porta indicada: {preferida}"
 
-    candidatas = listar_candidatas()
+    candidatas = listar_candidatas(ignorar)
 
     if len(candidatas) == 1:
         porta, descricao = candidatas[0]
